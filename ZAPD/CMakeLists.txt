@@ -350,6 +350,27 @@ endif()
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	set(CMAKE_FIND_FRAMEWORK LAST)
 endif()
+
+################################################################################
+# Find/download PNG for Android
+################################################################################
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+    find_package(PNG QUIET)
+    if (NOT ${PNG_FOUND})
+    	include(FetchContent)
+        FetchContent_Declare(
+            png
+	    GIT_REPOSITORY https://github.com/glennrp/libpng.git
+	    GIT_TAG v1.6.37
+	    OVERRIDE_FIND_PACKAGE
+    	)
+        message("PNG not found. Downloading now...")
+        FetchContent_MakeAvailable(png)
+        message("PNG downloaded to " ${FETCHCONTENT_BASE_DIR}/png-src)
+        set (PNG_PNG_INCLUDE_DIR ${png_BINARY_DIR} ${png_SOURCE_DIR})
+    endif()
+endif()
+
 find_package(PNG REQUIRED)
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -480,6 +501,15 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "NintendoSwitch")
                -Wl,--whole-archive $<TARGET_LINKER_FILE_DIR:OTRExporter>/$<TARGET_LINKER_FILE_NAME:OTRExporter> -Wl,--no-whole-archive
                "libultraship;"
                PNG::PNG
+               Threads::Threads
+       )
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
+       set(THREADS_PREFER_PTHREAD_FLAG ON)
+       find_package(Threads REQUIRED)
+       set(ADDITIONAL_LIBRARY_DEPENDENCIES
+               -Wl,--whole-archive $<TARGET_LINKER_FILE_DIR:OTRExporter>/$<TARGET_LINKER_FILE_NAME:OTRExporter> -Wl,--no-whole-archive
+               "libultraship;"
+               png
                Threads::Threads
        )
 elseif(CMAKE_SYSTEM_NAME STREQUAL "CafeOS")
